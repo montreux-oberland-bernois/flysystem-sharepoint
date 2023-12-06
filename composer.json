@@ -19,12 +19,19 @@
             "role": "Developer"
         }
     ],
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/montreux-oberland-bernois/sharepoint-api.git"
+        }
+    ],
     "require": {
         "php": "^7.3 || ^8.1",
-        "league/flysystem": "2.1.1",
-        "delaneymethod/sharepoint-api": "^2.0.0"
+        "delaneymethod/sharepoint-api": "^2.0",
+        "league/flysystem": "2.1.1"
     },
     "require-dev": {
+        "phpspec/prophecy": "^1.17",
         "phpunit/phpunit": "^8.5"
     },
     "autoload": {

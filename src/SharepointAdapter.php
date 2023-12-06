@@ -3,33 +3,27 @@
 namespace DelaneyMethod\FlysystemSharepoint;
 
 use Exception;
+use GuzzleHttp\Psr7\MimeType;
 use League\Flysystem\Config;
-use League\Flysystem\Util\MimeType;
+use League\Flysystem\FileAttributes;
+use League\Flysystem\FilesystemAdapter;
 use DelaneyMethod\Sharepoint\Client;
-use League\Flysystem\Adapter\AbstractAdapter;
-use League\Flysystem\Adapter\Polyfill\NotSupportingVisibilityTrait;
 
-class SharepointAdapter extends AbstractAdapter
+class SharepointAdapter implements FilesystemAdapter
 {
-	use NotSupportingVisibilityTrait;
-
 	protected $client;
 
-	public function __construct(Client $client, string $prefix = '')
+	public function __construct(Client $client)
 	{
 		$this->client = $client;
-		
-		$this->setPathPrefix($prefix);
+    }
+	
+	public function write($path, $contents, Config $config): void {
+		$this->upload($path, $contents);
 	}
 	
-	public function write($path, $contents, Config $config)
-	{
-		return $this->upload($path, $contents);
-	}
-	
-	public function writeStream($path, $resource, Config $config)
-	{
-		return $this->upload($path, $resource);
+	public function writeStream($path, $resource, Config $config): void {
+		$this->upload($path, $resource);
 	}
 	
 	public function update($path, $contents, Config $config)
@@ -42,8 +36,7 @@ class SharepointAdapter extends AbstractAdapter
 		return $this->upload($path, $resource);
 	}
 	
-	public function read($path)
-	{
+	public function read($path): string {
 		if (!$response = $this->readStream($path)) {
 			return false;
 		}
@@ -86,25 +79,23 @@ class SharepointAdapter extends AbstractAdapter
 		return $this->client->move($path, $newPath, $mimeType);
 	}
 	
-	public function copy($path, $newpath) : bool
-	{
+	public function copy($path, $newpath, Config $config) : void {
 		$path = $this->applyPathPrefix($path);
 		
 		$newpath = $this->applyPathPrefix($newpath);
 		
-		return $this->client->copy($path, $newpath, $mimeType);
+		$this->client->copy($path, $newpath, $config->get('mime'));
 	}
 	
-	public function delete($path) : bool
-	{
+	public function delete($path) : void {
 		$path = $this->applyPathPrefix($path);
 		
-		return $this->client->delete($path);
+		$this->client->delete($path);
 	}
 	
-	public function deleteDir($dirname) : bool
+	public function deleteDir($dirname) : void
 	{
-		return $this->delete($dirname);
+		$this->delete($dirname);
 	}
 	
 	public function createDir($path, Config $config) : bool
@@ -122,8 +113,8 @@ class SharepointAdapter extends AbstractAdapter
 			$mimeType = $this->getMimetype($path);
 			
 			$metadata = $this->client->getMetadata($path, $mimeType);
-		
-			return true;
+
+			return !empty($metadata);
 		} catch (Exception $exception) {
 			return false;
 		}
@@ -172,18 +163,11 @@ class SharepointAdapter extends AbstractAdapter
 	
 	public function getMimetype($path)
 	{
-		return ['mimetype' => MimeType::detectByFilename($path)];
-	}
-	
-	public function getTimestamp($path)
-	{
-		return $this->getMetadata($path);
+		return ['mimetype' => MimeType::fromFilename($path)];
 	}
 	
 	public function applyPathPrefix($path) : string
 	{
-		$path = parent::applyPathPrefix($path);
-
 		return '/'.trim($path, '/');
 	}
 
@@ -194,9 +178,9 @@ class SharepointAdapter extends AbstractAdapter
 	
 	protected function normalizeResponse(array $response) : array
 	{
-		list($normalizedPathPart1, $normalizedPathPart2) = explode('Shared Documents', $response['ServerRelativeUrl']);
+		[, $normalizedPathPart2] = explode('Shared Documents', $response['ServerRelativeUrl']);
 		
-		$normalizedPath = ltrim($this->removePathPrefix($normalizedPathPart2), '/');
+		$normalizedPath = ltrim($normalizedPathPart2, '/');
 	
 		$normalizedResponse = [
 			'path' => $normalizedPath
@@ -220,4 +204,40 @@ class SharepointAdapter extends AbstractAdapter
 		
 		return $normalizedResponse;
 	}
+
+    public function fileExists(string $path): bool {
+        // TODO: Implement fileExists() method.
+    }
+
+    public function deleteDirectory(string $path): void {
+        // TODO: Implement deleteDirectory() method.
+    }
+
+    public function createDirectory(string $path, Config $config): void {
+        // TODO: Implement createDirectory() method.
+    }
+
+    public function setVisibility(string $path, string $visibility): void {
+        // TODO: Implement setVisibility() method.
+    }
+
+    public function visibility(string $path): FileAttributes {
+        // TODO: Implement visibility() method.
+    }
+
+    public function mimeType(string $path): FileAttributes {
+        return new FileAttributes($path, null, null, null, MimeType::fromFilename($path));
+    }
+
+    public function lastModified(string $path): FileAttributes {
+        // TODO: Implement lastModified() method.
+    }
+
+    public function fileSize(string $path): FileAttributes {
+        // TODO: Implement fileSize() method.
+    }
+
+    public function move(string $source, string $destination, Config $config): void {
+        // TODO: Implement move() method.
+    }
 }

@@ -2,12 +2,9 @@
 
 namespace DelaneyMethod\FlysystemSharepoint\Test;
 
-use Prophecy\Argument;
-use League\Flysystem\Config;
-use GuzzleHttp\Psr7\Response;
+
 use PHPUnit\Framework\TestCase;
 use DelaneyMethod\Sharepoint\Client;
-use DelaneyMethod\Sharepoint\Exceptions\BadRequest;
 use DelaneyMethod\FlysystemSharepoint\SharepointAdapter;
 
 class SharepointAdapterTest extends TestCase
@@ -22,7 +19,7 @@ class SharepointAdapterTest extends TestCase
 	{
 		$this->client = $this->prophesize(Client::class);
 
-		$this->sharepointAdapter = new SharepointAdapter($this->client->reveal(), 'prefix');
+		$this->sharepointAdapter = new SharepointAdapter($this->client->reveal());
 	}
 
 	/** @test */
